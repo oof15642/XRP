@@ -6,6 +6,7 @@ package frc.robot;
 
 import javax.swing.plaf.basic.BasicBorders.MarginBorder;
 
+import edu.wpi.first.math.kinematics.Odometry;
 import edu.wpi.first.wpilibj.AnalogInput;
 import edu.wpi.first.wpilibj.TimedRobot;
 //import edu.wpi.first.wpilibj.Ultrasonic;
@@ -15,6 +16,7 @@ import edu.wpi.first.wpilibj2.command.PrintCommand;
 import edu.wpi.first.wpilibj2.command.PrintCommand;
 import edu.wpi.first.wpilibj2.command.button.CommandXboxController;
 import edu.wpi.first.wpilibj2.command.button.Trigger;
+import edu.wpi.first.wpilibj.smartdashboard.Field2d;
 import edu.wpi.first.wpilibj.smartdashboard.SendableChooser;
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import edu.wpi.first.wpilibj.xrp.XRPOnBoardIO;
@@ -22,6 +24,8 @@ import frc.robot.commands.ArcadeDrive;
 import frc.robot.commands.AutonomousDistance;
 import frc.robot.commands.AutonomousTime;
 import frc.robot.commands.DriveDistance;
+import frc.robot.commands.MoveArm;
+import frc.robot.subsystems.Arm;
 import frc.robot.subsystems.Drivetrain;
 import frc.robot.subsystems.RangeFinder;
 
@@ -45,8 +49,14 @@ public class Robot extends TimedRobot {
   private final SendableChooser<Command> m_chooser = new SendableChooser<>();
 
   private final RangeFinder m_rangeFinder = new RangeFinder();
+  private final Arm m_arm = new Arm();
+
+  private final Field2d field = new Field2d();
+  
 
   private boolean triggerPressed = false;
+  double leftX;
+  double rightX;
 
   
 
@@ -69,6 +79,7 @@ public class Robot extends TimedRobot {
 
     // Trigger testbutton = new Trigger(m_onboardIO::getUserButtonPressed);
     // testbutton.onTrue(new FindRange(rangeFinder));
+
     
     // Setup SmartDashboard options
     m_chooser.setDefaultOption("Auto Routine Distance", new AutonomousDistance(m_drivetrain));
@@ -94,17 +105,22 @@ public class Robot extends TimedRobot {
     // and running subsystem periodic() methods.  This must be called from the robot's periodic
     // block in order for anything in the Command-based framework to work.
     
+    //new MoveArm(m_arm, m_controller.getRightY() * 180);
 
     CommandScheduler.getInstance().run();
 
-    if (m_rangeFinder.checkDistance(m_rangeFinder.returnDistance()) != true){
-      CommandScheduler.getInstance().cancelAll();
-    }
+    SmartDashboard.putNumber("Range", m_rangeFinder.returnDistance());
+    SmartDashboard.putData(field);
+
+    // if (m_rangeFinder.checkDistance(m_rangeFinder.returnDistance()) != true){
+    //   CommandScheduler.getInstance().cancelAll();
+    // }
   }
 
+  
+
   public Command getArcadeDriveCommand() {
-    
-    return new ArcadeDrive(m_drivetrain, () -> -m_controller.getLeftY(), () -> -m_controller.getLeftX());
+    return new ArcadeDrive(m_drivetrain, () -> -m_controller.getLeftY(), () -> -m_controller.getRightX());
     
   }
 
@@ -140,6 +156,8 @@ public class Robot extends TimedRobot {
     // teleop starts running. If you want the autonomous to
     // continue until interrupted by another command, remove
     // this line or comment it out.
+    
+    
 
     if (m_autonomousCommand != null) {
       m_autonomousCommand.cancel();
@@ -149,6 +167,7 @@ public class Robot extends TimedRobot {
   /** This function is called periodically during operator control. */
   @Override
   public void teleopPeriodic() {
+    
     
     
 
