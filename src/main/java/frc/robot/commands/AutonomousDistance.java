@@ -23,7 +23,7 @@ public class AutonomousDistance extends SequentialCommandGroup {
 
 
   
-  public AutonomousDistance(Drivetrain drivetrain) {
-    addCommands(new DriveDistance(1, table.getDoubleTopic("Forward Distance").subscribe(0.0).get(), drivetrain));
+  public AutonomousDistance(Drivetrain drivetrain, double speed) {
+    addCommands(new DriveDistance(speed, 20, drivetrain));
   }
 }

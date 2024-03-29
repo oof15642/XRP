@@ -7,6 +7,10 @@ package frc.robot;
 import javax.swing.plaf.basic.BasicBorders.MarginBorder;
 
 import edu.wpi.first.math.kinematics.Odometry;
+import edu.wpi.first.networktables.DoubleSubscriber;
+import edu.wpi.first.networktables.NetworkTable;
+import edu.wpi.first.networktables.NetworkTableInstance;
+import edu.wpi.first.networktables.TimestampedDouble;
 import edu.wpi.first.wpilibj.AnalogInput;
 import edu.wpi.first.wpilibj.TimedRobot;
 //import edu.wpi.first.wpilibj.Ultrasonic;
@@ -58,6 +62,22 @@ public class Robot extends TimedRobot {
   double leftX;
   double rightX;
 
+  NetworkTableInstance inst = NetworkTableInstance.getDefault();
+  NetworkTable table = inst.getTable("Mic Information");
+  double speed;
+
+  double counter;
+  double previousValue;
+  boolean hasBeenChanged = false;
+  double currentValue;
+
+  
+  DoubleSubscriber countCurrentSubscription = table.getDoubleTopic("Times Direction Changed").subscribe(0.0);
+  DoubleSubscriber speedSubscription = table.getDoubleTopic("Forward Distance").subscribe(0.0);
+  DoubleSubscriber countChangeSubscription = table.getDoubleTopic("Times Direction Changed").subscribe(0.0);
+
+  
+
   
 
   /**
@@ -82,9 +102,7 @@ public class Robot extends TimedRobot {
 
     
     // Setup SmartDashboard options
-    m_chooser.setDefaultOption("Auto Routine Distance", new AutonomousDistance(m_drivetrain));
-    m_chooser.addOption("Auto Routine Time", new AutonomousTime(m_drivetrain));
-    SmartDashboard.putData(m_chooser);
+    
   }
 
   public Command getAutonomousCommand() {
@@ -108,7 +126,7 @@ public class Robot extends TimedRobot {
     //new MoveArm(m_arm, m_controller.getRightY() * 180);
 
     CommandScheduler.getInstance().run();
-
+    SmartDashboard.putNumber("Forward Speed", speed);
     SmartDashboard.putNumber("Range", m_rangeFinder.returnDistance());
     SmartDashboard.putData(field);
 
@@ -134,12 +152,7 @@ public class Robot extends TimedRobot {
   /** This autonomous runs the autonomous command selected by your {@link RobotContainer} class. */
   @Override
   public void autonomousInit() {
-    m_autonomousCommand = getAutonomousCommand();
-
-    // schedule the autonomous command (example)
-    if (m_autonomousCommand != null) {
-      m_autonomousCommand.schedule();
-    }
+    previousValue = countChangeSubscription.get();
   }
 
   /** This function is called periodically during autonomous. */
@@ -148,6 +161,22 @@ public class Robot extends TimedRobot {
     // if (m_rangeFinder.checkDistance(m_rangeFinder.returnDistance()) != true){
     //   m_autonomousCommand.cancel();
     // }
+
+    m_chooser.setDefaultOption("Auto Routine Distance", new AutonomousDistance(m_drivetrain, speed));
+    SmartDashboard.putData(m_chooser);
+    
+    m_autonomousCommand = getAutonomousCommand();
+    
+    speed = speedSubscription.get();
+    currentValue = countCurrentSubscription.get();
+
+    hasBeenChanged = previousValue < currentValue;
+
+    // schedule the autonomous command (example)
+    if (m_autonomousCommand != null && hasBeenChanged) {
+        m_autonomousCommand.schedule();
+        previousValue = currentValue;
+    }
   }
 
   @Override
